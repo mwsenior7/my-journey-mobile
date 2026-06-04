@@ -1,13 +1,14 @@
 {
   "expo": {
-    "name": "my-journey-mobile",
+    "name": "My Journey to America",
     "slug": "my-journey-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cozaventures.myjourneytoamerica"
     },
     "android": {
       "adaptiveIcon": {
@@ -20,6 +21,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "scheme": "myjourneytoamerica",
+    "plugins": [
+      "expo-router"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "52c838db-08f5-4189-8a1a-b19ac59f485d"
+      }
     }
   }
 }
