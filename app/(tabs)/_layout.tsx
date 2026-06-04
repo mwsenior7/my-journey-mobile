@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Text } from 'react-native';
 
 export default function TabsLayout() {
   return (
@@ -11,14 +11,14 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: '#94a3b8',
         tabBarStyle: { backgroundColor: '#0f172a', borderTopColor: 'transparent' },
         tabBarIcon: ({ color, size }) => {
-          let name: any = 'home';
+          let label = '🏠';
           const r = route.name;
-          if (r === 'index') name = 'home';
-          else if (r === 'browse') name = 'book';
-          else if (r === 'share') name = 'add';
-          else if (r === 'map') name = 'map';
-          else if (r === 'community') name = 'people';
-          return <MaterialIcons name={name} size={size} color={color} />;
+          if (r === 'index') label = '🏠';
+          else if (r === 'browse') label = '📚';
+          else if (r === 'share') label = '➕';
+          else if (r === 'map') label = '🗺️';
+          else if (r === 'community') label = '👥';
+          return <Text style={{ color, fontSize: size }}>{label}</Text>;
         },
       })}
     >
