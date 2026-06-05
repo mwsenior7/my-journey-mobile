@@ -1,6 +1,9 @@
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
+  const router = useRouter();
+
   const stats = [
     { label: 'Stories archived', value: '1,247' },
     { label: 'Countries represented', value: '89' },
@@ -24,10 +27,10 @@ export default function HomeScreen() {
           A living archive of immigration stories — told by the people who lived them. Discover where people came from, how they arrived, and who they became.
         </Text>
         <View style={styles.heroButtons}>
-          <TouchableOpacity style={styles.filledButton} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.filledButton} activeOpacity={0.85} onPress={() => router.push('/(tabs)/browse')}>
             <Text style={styles.filledButtonText}>Browse Stories</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.outlineButton} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.outlineButton} activeOpacity={0.85} onPress={() => router.push('/(tabs)/share')}>
             <Text style={styles.outlineButtonText}>Share Your Story</Text>
           </TouchableOpacity>
         </View>
