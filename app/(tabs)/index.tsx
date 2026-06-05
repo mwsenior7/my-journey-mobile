@@ -1,28 +1,105 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
+const WorldMapSVG = () => {
+  return (
+    <View style={styles.mapSvgContainer}>
+      <View style={[styles.mapLine, { top: '20%', left: '10%', width: 80, height: 40 }]} />
+      <View style={[styles.mapLine, { top: '25%', left: '50%', width: 60, height: 50 }]} />
+      <View style={[styles.mapLine, { top: '40%', left: '70%', width: 50, height: 30 }]} />
+      <View style={[styles.mapLine, { top: '50%', left: '20%', width: 40, height: 60 }]} />
+      <View style={[styles.mapLine, { top: '60%', left: '60%', width: 70, height: 40 }]} />
+    </View>
+  );
+};
+
 export default function HomeScreen() {
-  const stats = [
-    { label: 'Stories archived', value: '1,247' },
-    { label: 'Countries represented', value: '89' },
-    { label: 'US states covered', value: '50' },
-  ];
+  const [stats, setStats] = useState<{ label: string; value: string }[]>([
+    { label: 'Stories archived', value: '—' },
+    { label: 'Countries represented', value: '—' },
+    { label: 'US states covered', value: '—' },
+  ]);
 
   const featured = [
     { name: 'Ana Martinez', country: 'Mexico', excerpt: 'From a small town to the New York skyline...' },
     { name: 'Kwame Mensah', country: 'Ghana', excerpt: 'A long journey across the sea and hope...' },
   ];
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://hesfbleyhuzlsqdjbciu.supabase.co';
+        const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_LuEFLmPs0_HQX1tP3El2SQ_uMSG_uxg';
+        
+        const response = await fetch(`${supabaseUrl}/rest/v1/stories?select=count`, {
+          method: 'GET',
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const countHeader = response.headers.get('content-range');
+          const storyCount = countHeader ? countHeader.split('/')[1] : '0';
+          
+          const countriesRes = await fetch(
+            `${supabaseUrl}/rest/v1/stories?select=country`,
+            {
+              headers: {
+                apikey: supabaseKey,
+                Authorization: `Bearer ${supabaseKey}`,
+              },
+            }
+          );
+          
+          const countriesData = await countriesRes.json();
+          const uniqueCountries = new Set(countriesData.map((s: any) => s.country).filter(Boolean)).size;
+          
+          const statesRes = await fetch(
+            `${supabaseUrl}/rest/v1/stories?select=us_state`,
+            {
+              headers: {
+                apikey: supabaseKey,
+                Authorization: `Bearer ${supabaseKey}`,
+              },
+            }
+          );
+          
+          const statesData = await statesRes.json();
+          const uniqueStates = new Set(statesData.map((s: any) => s.us_state).filter(Boolean)).size;
+          
+          setStats([
+            { label: 'Stories archived', value: storyCount },
+            { label: 'Countries represented', value: uniqueCountries.toString() },
+            { label: 'US states covered', value: uniqueStates.toString() },
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+    
+    fetchStats();
+  }, []);
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.hero}>
+        <WorldMapSVG />
         <View style={styles.mapDecor} />
         <Text style={styles.smallTag}>AN ARCHIVE OF IMMIGRATION STORIES</Text>
-        <Text style={styles.headline}>
+        <Text
+          style={styles.headline}
+          adjustsFontSizeToFit={true}
+          numberOfLines={1}
+        >
           <Text style={styles.headlineWhite}>Every Journey</Text>
           <Text style={styles.headlineGold}> Tells a Story.</Text>
         </Text>
-        <Text style={styles.subtext}>A living archive of immigration stories — told by the people who lived them.</Text>
+        <Text style={styles.subtextLine1}>A living archive of immigration stories — told by the people who lived them.</Text>
+        <Text style={styles.subtextLine2}>Discover where people came from, how they arrived, and who they became.</Text>
 
         <View style={styles.heroButtons}>
           <TouchableOpacity style={styles.filledButton} activeOpacity={0.85}>
@@ -61,23 +138,29 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
   content: { padding: 20, paddingBottom: 40 },
 
-  hero: { paddingVertical: 28, alignItems: 'center', position: 'relative' },
-  mapDecor: {
+  mapSvgContainer: {
     position: 'absolute',
-    top: 10,
-    right: 20,
-    width: 220,
-    height: 120,
-    backgroundColor: '#d4a843',
-    opacity: 0.05,
-    borderRadius: 8,
-    transform: [{ rotate: '-12deg' }],
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0.15,
   },
-  smallTag: { color: '#d4a843', fontSize: 12, letterSpacing: 1.2, marginBottom: 12, fontWeight: '700' },
-  headline: { fontSize: 34, fontWeight: '800', textAlign: 'center', lineHeight: 40 },
+  mapLine: {
+    position: 'absolute',
+    backgroundColor: '#d4a843',
+    opacity: 0.6,
+    borderRadius: 3,
+  },
+
+  hero: { paddingVertical: 28, alignItems: 'center', position: 'relative', zIndex: 10 },
+  mapDecor: { display: 'none' },
+  smallTag: { color: '#d4a843', fontSize: 11, letterSpacing: 1.4, marginBottom: 14, fontWeight: '700', textTransform: 'uppercase' },
+  headline: { fontSize: 36, fontWeight: '800', textAlign: 'center', lineHeight: 42 },
   headlineWhite: { color: '#ffffff' },
   headlineGold: { color: '#d4a843' },
-  subtext: { color: '#f8f6f0', fontSize: 14, textAlign: 'center', marginTop: 10, maxWidth: 600 },
+  subtextLine1: { color: '#f8f6f0', fontSize: 14, textAlign: 'center', marginTop: 12 },
+  subtextLine2: { color: '#f8f6f0', fontSize: 14, textAlign: 'center', marginTop: 6 },
 
   heroButtons: { flexDirection: 'row', marginTop: 18 },
   filledButton: { backgroundColor: '#d4a843', paddingVertical: 12, paddingHorizontal: 18, borderRadius: 8, marginHorizontal: 8 },
