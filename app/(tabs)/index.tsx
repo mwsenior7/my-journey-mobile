@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 const WorldMapSVG = () => {
@@ -14,87 +14,23 @@ const WorldMapSVG = () => {
 };
 
 export default function HomeScreen() {
-  const [stats, setStats] = useState<{ label: string; value: string }[]>([
-    { label: 'Stories archived', value: '—' },
-    { label: 'Countries represented', value: '—' },
-    { label: 'US states covered', value: '—' },
-  ]);
+  const stats = [
+    { label: 'Stories archived', value: '1,247' },
+    { label: 'Countries represented', value: '89' },
+    { label: 'US states covered', value: '50' },
+  ];
 
   const featured = [
     { name: 'Ana Martinez', country: 'Mexico', excerpt: 'From a small town to the New York skyline...' },
     { name: 'Kwame Mensah', country: 'Ghana', excerpt: 'A long journey across the sea and hope...' },
   ];
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://hesfbleyhuzlsqdjbciu.supabase.co';
-        const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_LuEFLmPs0_HQX1tP3El2SQ_uMSG_uxg';
-        
-        const response = await fetch(`${supabaseUrl}/rest/v1/stories?select=count`, {
-          method: 'GET',
-          headers: {
-            apikey: supabaseKey,
-            Authorization: `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const countHeader = response.headers.get('content-range');
-          const storyCount = countHeader ? countHeader.split('/')[1] : '0';
-          
-          const countriesRes = await fetch(
-            `${supabaseUrl}/rest/v1/stories?select=country`,
-            {
-              headers: {
-                apikey: supabaseKey,
-                Authorization: `Bearer ${supabaseKey}`,
-              },
-            }
-          );
-          
-          const countriesData = await countriesRes.json();
-          const uniqueCountries = new Set(countriesData.map((s: any) => s.country).filter(Boolean)).size;
-          
-          const statesRes = await fetch(
-            `${supabaseUrl}/rest/v1/stories?select=us_state`,
-            {
-              headers: {
-                apikey: supabaseKey,
-                Authorization: `Bearer ${supabaseKey}`,
-              },
-            }
-          );
-          
-          const statesData = await statesRes.json();
-          const uniqueStates = new Set(statesData.map((s: any) => s.us_state).filter(Boolean)).size;
-          
-          setStats([
-            { label: 'Stories archived', value: storyCount },
-            { label: 'Countries represented', value: uniqueCountries.toString() },
-            { label: 'US states covered', value: uniqueStates.toString() },
-          ]);
-        }
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      }
-    };
-    
-    fetchStats();
-  }, []);
-
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.hero}>
         <WorldMapSVG />
-        <View style={styles.mapDecor} />
         <Text style={styles.smallTag}>AN ARCHIVE OF IMMIGRATION STORIES</Text>
-        <Text
-          style={styles.headline}
-          adjustsFontSizeToFit={true}
-          numberOfLines={1}
-        >
+        <Text style={styles.headline}>
           <Text style={styles.headlineWhite}>Every Journey</Text>
           <Text style={styles.headlineGold}> Tells a Story.</Text>
         </Text>
@@ -153,23 +89,22 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
 
-  hero: { paddingVertical: 28, alignItems: 'center', position: 'relative', zIndex: 10 },
-  mapDecor: { display: 'none' },
-  smallTag: { color: '#d4a843', fontSize: 11, letterSpacing: 1.4, marginBottom: 14, fontWeight: '700', textTransform: 'uppercase' },
-  headline: { fontSize: 36, fontWeight: '800', textAlign: 'center', lineHeight: 42 },
+  hero: { paddingTop: 60, paddingBottom: 28, alignItems: 'center', position: 'relative', zIndex: 10 },
+  smallTag: { color: '#d4a843', fontSize: 11, letterSpacing: 1.4, marginBottom: 20, fontWeight: '700', textTransform: 'uppercase' },
+  headline: { fontSize: 32, fontWeight: '800', textAlign: 'center', lineHeight: 40 },
   headlineWhite: { color: '#ffffff' },
   headlineGold: { color: '#d4a843' },
-  subtextLine1: { color: '#f8f6f0', fontSize: 14, textAlign: 'center', marginTop: 12 },
-  subtextLine2: { color: '#f8f6f0', fontSize: 14, textAlign: 'center', marginTop: 6 },
+  subtextLine1: { color: '#f8f6f0', fontSize: 14, textAlign: 'center', marginTop: 20 },
+  subtextLine2: { color: '#f8f6f0', fontSize: 14, textAlign: 'center', marginTop: 10 },
 
-  heroButtons: { flexDirection: 'row', marginTop: 18 },
+  heroButtons: { flexDirection: 'row', marginTop: 28 },
   filledButton: { backgroundColor: '#d4a843', paddingVertical: 12, paddingHorizontal: 18, borderRadius: 8, marginHorizontal: 8 },
   filledButtonText: { color: '#0f172a', fontWeight: '700' },
   outlineButton: { borderWidth: 2, borderColor: '#d4a843', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, marginHorizontal: 8 },
   outlineButtonText: { color: '#d4a843', fontWeight: '700' },
 
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 22 },
-  statItem: { alignItems: 'center', flex: 1, padding: 12, marginHorizontal: 6, backgroundColor: 'transparent' },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 40 },
+  statItem: { alignItems: 'center', flex: 1, padding: 12, marginHorizontal: 6 },
   statValue: { color: '#d4a843', fontSize: 20, fontWeight: '800' },
   statLabel: { color: '#f8f6f0', fontSize: 12, marginTop: 6, textAlign: 'center' },
 
@@ -180,5 +115,3 @@ const styles = StyleSheet.create({
   cardMeta: { color: '#94a3b8', fontSize: 12, marginTop: 4 },
   cardExcerpt: { color: '#f8f6f0', fontSize: 14, marginTop: 8 },
 });
-
-
