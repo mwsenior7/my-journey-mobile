@@ -1,5 +1,8 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 const FILTERS = [
   'All',
@@ -11,94 +14,57 @@ const FILTERS = [
   'Caribbean',
 ];
 
-const STORIES = [
-  {
-    name: 'Ana Martinez',
-    flag: '🇲🇽',
-    country: 'Mexico',
-    state: 'New York',
-    year: 2004,
-    region: 'Latin America',
-    excerpt: 'She crossed the border with nothing but a phone number scrawled on a piece of paper and the hope that someone would answer.',
-  },
-  {
-    name: 'Kwame Mensah',
-    flag: '🇬🇭',
-    country: 'Ghana',
-    state: 'Minnesota',
-    year: 2011,
-    region: 'Middle East & Africa',
-    excerpt: 'After three years of visa rejections, the fourth application finally came through on a Tuesday morning that changed everything.',
-  },
-  {
-    name: 'Priya Nair',
-    flag: '🇮🇳',
-    country: 'India',
-    state: 'California',
-    year: 2008,
-    region: 'South Asia',
-    excerpt: 'She arrived with two suitcases, a computer science degree, and a job offer that turned into a 20-year career in Silicon Valley.',
-  },
-  {
-    name: 'Fatima Al-Rashid',
-    flag: '🇸🇾',
-    country: 'Syria',
-    state: 'Michigan',
-    year: 2016,
-    region: 'Middle East & Africa',
-    excerpt: 'The refugee camp was supposed to be temporary. Three years later, a resettlement call came and the family of five packed what little remained.',
-  },
-  {
-    name: 'Carlos Reyes',
-    flag: '🇸🇻',
-    country: 'El Salvador',
-    state: 'Texas',
-    year: 1999,
-    region: 'Latin America',
-    excerpt: 'He left during the civil war\'s aftermath and built a construction business that now employs forty people, half of them his own relatives.',
-  },
-  {
-    name: 'Mei-Lin Chen',
-    flag: '🇹🇼',
-    country: 'Taiwan',
-    state: 'Washington',
-    year: 2001,
-    region: 'East & Southeast Asia',
-    excerpt: 'A scholarship to study marine biology brought her to Seattle. She never left, drawn by the grey skies that reminded her of home.',
-  },
-  {
-    name: 'Olena Kovalenko',
-    flag: '🇺🇦',
-    country: 'Ukraine',
-    state: 'Illinois',
-    year: 2022,
-    region: 'Europe',
-    excerpt: 'She fled Kyiv with her daughter in February, carrying school reports and a photo album. Her husband stayed behind.',
-  },
-  {
-    name: 'Jean-Pierre Dubois',
-    flag: '🇭🇹',
-    country: 'Haiti',
-    state: 'Florida',
-    year: 2010,
-    region: 'Caribbean',
-    excerpt: 'The earthquake took the house his grandfather built. He rebuilt in Miami, and sends money home every month without fail.',
-  },
-];
+type Story = {
+  id: string;
+  name: string;
+  country_of_origin: string;
+  us_state: string;
+  year: number | null;
+  story_text: string;
+  region?: string;
+};
 
 export default function BrowseScreen() {
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
 
-  const filtered = STORIES.filter((s) => {
+  useEffect(() => {
+    const fetchStories = async () => {
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/stories?select=*&order=created_at.desc`,
+          {
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+            },
+          }
+        );
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+        const data: Story[] = await res.json();
+        setStories(data);
+      } catch (e: any) {
+        setError(e.message ?? 'Failed to load stories.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStories();
+  }, []);
+
+  const filtered = stories.filter((s) => {
     const matchesFilter = activeFilter === 'All' || s.region === activeFilter;
     const q = search.toLowerCase();
     const matchesSearch =
       q === '' ||
-      s.name.toLowerCase().includes(q) ||
-      s.country.toLowerCase().includes(q) ||
-      s.state.toLowerCase().includes(q) ||
-      s.excerpt.toLowerCase().includes(q);
+      (s.name ?? '').toLowerCase().includes(q) ||
+      (s.country_of_origin ?? '').toLowerCase().includes(q) ||
+      (s.us_state ?? '').toLowerCase().includes(q) ||
+      (s.story_text ?? '').toLowerCase().includes(q);
     return matchesFilter && matchesSearch;
   });
 
@@ -135,23 +101,36 @@ export default function BrowseScreen() {
         })}
       </ScrollView>
 
-      <ScrollView
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {filtered.length === 0 && (
-          <Text style={styles.emptyText}>No stories match your search.</Text>
-        )}
-        {filtered.map((s) => (
-          <View key={s.name} style={styles.card}>
-            <Text style={styles.cardName}>{s.name}</Text>
-            <Text style={styles.cardCountry}>{s.flag} {s.country}</Text>
-            <Text style={styles.cardMeta}>{s.state} · {s.year}</Text>
-            <Text style={styles.cardExcerpt}>{s.excerpt}</Text>
-          </View>
-        ))}
-      </ScrollView>
+      {loading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#d4a843" />
+          <Text style={styles.loadingText}>Loading stories...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {filtered.length === 0 && (
+            <Text style={styles.emptyText}>No stories match your search.</Text>
+          )}
+          {filtered.map((s) => (
+            <View key={s.id} style={styles.card}>
+              <Text style={styles.cardName}>{s.name}</Text>
+              <Text style={styles.cardCountry}>{s.country_of_origin}</Text>
+              <Text style={styles.cardMeta}>
+                {[s.us_state, s.year].filter(Boolean).join(' · ')}
+              </Text>
+              <Text style={styles.cardExcerpt} numberOfLines={3}>{s.story_text}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -165,7 +144,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     paddingTop: 60,
     paddingHorizontal: 24,
-    marginBottom: 0,
   },
 
   searchBar: {
@@ -191,6 +169,10 @@ const styles = StyleSheet.create({
   filterChipActive: { borderColor: '#d4a843' },
   filterText: { color: '#f8f6f0', fontSize: 13, fontWeight: '500' },
   filterTextActive: { color: '#d4a843', fontWeight: '700' },
+
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 60 },
+  loadingText: { color: '#64748b', marginTop: 12, fontSize: 15 },
+  errorText: { color: '#f87171', fontSize: 15, textAlign: 'center', paddingHorizontal: 24 },
 
   list: { flex: 1, marginTop: 16 },
   listContent: { paddingHorizontal: 24, paddingBottom: 40 },
