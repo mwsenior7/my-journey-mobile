@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const SUPABASE_URL = 'https://hesfbleyhuzlsqdjbciu.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_LuEFLmPs0_HQX1tP3El2SQ_uMSG_uxg';
 
 const FILTERS = [
   'All',
@@ -38,11 +38,11 @@ export default function BrowseScreen() {
         console.log('Fetching stories from:', url);
         const res = await fetch(url, {
           headers: {
-            'apikey': SUPABASE_ANON_KEY!,
+            'apikey': SUPABASE_ANON_KEY,
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           },
         });
-        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+        if (!res.ok) throw new Error(`Supabase returned ${res.status}: ${await res.text()}`);
         const data: Story[] = await res.json();
         setStories(data);
       } catch (e: any) {
