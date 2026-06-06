@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 const FILTERS = [
   'All',
@@ -34,15 +34,14 @@ export default function BrowseScreen() {
   useEffect(() => {
     const fetchStories = async () => {
       try {
-        const res = await fetch(
-          `${SUPABASE_URL}/rest/v1/stories?select=*&order=created_at.desc`,
-          {
-            headers: {
-              apikey: SUPABASE_KEY,
-              Authorization: `Bearer ${SUPABASE_KEY}`,
-            },
-          }
-        );
+        const url = `${SUPABASE_URL}/rest/v1/stories?select=*&order=created_at.desc`;
+        console.log('Fetching stories from:', url);
+        const res = await fetch(url, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY!,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+        });
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         const data: Story[] = await res.json();
         setStories(data);
