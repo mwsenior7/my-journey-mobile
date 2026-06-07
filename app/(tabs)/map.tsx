@@ -1,43 +1,60 @@
 import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const MAP_HEIGHT = SCREEN_WIDTH * 0.65;
 
-// Dots positioned as percentages of map width/height to represent origin regions
-const DOTS = [
-  // Latin America
-  { top: '55%', left: '22%' },
-  { top: '62%', left: '26%' },
-  { top: '68%', left: '24%' },
-  { top: '58%', left: '18%' },
-  // Caribbean
-  { top: '48%', left: '27%' },
+// Rough continent shapes as positioned rectangles (left/top as % strings, width/height in px)
+const CONTINENTS = [
   // North America
-  { top: '35%', left: '16%' },
-  // West Africa
-  { top: '52%', left: '46%' },
-  { top: '58%', left: '50%' },
-  // East Africa
-  { top: '55%', left: '56%' },
-  // Middle East
-  { top: '40%', left: '57%' },
-  { top: '44%', left: '60%' },
-  // South Asia
-  { top: '42%', left: '66%' },
-  { top: '48%', left: '68%' },
-  // Southeast Asia
-  { top: '52%', left: '76%' },
-  { top: '55%', left: '80%' },
-  // East Asia
-  { top: '36%', left: '78%' },
-  { top: '40%', left: '74%' },
+  { top: '8%', left: '4%', width: 90, height: 70, borderRadius: 6 },
+  { top: '22%', left: '8%', width: 70, height: 50, borderRadius: 4 },
+  // South America
+  { top: '48%', left: '16%', width: 60, height: 80, borderRadius: 8 },
   // Europe
-  { top: '28%', left: '48%' },
-  { top: '32%', left: '52%' },
-  { top: '26%', left: '54%' },
+  { top: '12%', left: '44%', width: 50, height: 40, borderRadius: 5 },
+  // Africa
+  { top: '34%', left: '46%', width: 65, height: 90, borderRadius: 10 },
+  // Asia (large — split into two blocks)
+  { top: '8%', left: '55%', width: 130, height: 65, borderRadius: 6 },
+  { top: '28%', left: '62%', width: 90, height: 55, borderRadius: 6 },
+  // Australia
+  { top: '62%', left: '74%', width: 55, height: 38, borderRadius: 8 },
+];
+
+// Story origin dots scattered to represent countries
+const DOTS = [
+  // Latin America / Caribbean
+  { top: '52%', left: '18%' },
+  { top: '60%', left: '22%' },
+  { top: '67%', left: '20%' },
+  { top: '46%', left: '26%' },
+  { top: '57%', left: '15%' },
+  // North America
+  { top: '30%', left: '12%' },
+  { top: '22%', left: '8%' },
+  // West Africa
+  { top: '50%', left: '46%' },
+  { top: '57%', left: '50%' },
+  // East Africa
+  { top: '54%', left: '57%' },
+  // Middle East
+  { top: '38%', left: '58%' },
+  { top: '43%', left: '61%' },
+  // South Asia
+  { top: '42%', left: '67%' },
+  { top: '48%', left: '70%' },
+  // Southeast Asia
+  { top: '50%', left: '78%' },
+  { top: '54%', left: '82%' },
+  // East Asia
+  { top: '28%', left: '78%' },
+  { top: '33%', left: '74%' },
+  // Europe
+  { top: '18%', left: '47%' },
+  { top: '22%', left: '52%' },
+  { top: '15%', left: '54%' },
   // Eastern Europe / Central Asia
-  { top: '30%', left: '60%' },
-  { top: '28%', left: '65%' },
+  { top: '20%', left: '61%' },
+  { top: '16%', left: '66%' },
 ];
 
 const TOP_COUNTRIES = [
@@ -54,19 +71,34 @@ export default function MapScreen() {
       <Text style={styles.header}>Journey Map</Text>
       <Text style={styles.subheader}>Stories from around the world</Text>
 
+      {/* Map panel */}
       <View style={styles.mapContainer}>
-        {DOTS.map((dot, i) => (
+        {/* Continent shapes */}
+        {CONTINENTS.map((c, i) => (
           <View
             key={i}
-            style={[styles.dot, { top: dot.top as any, left: dot.left as any }]}
+            style={[
+              styles.continent,
+              {
+                top: c.top as any,
+                left: c.left as any,
+                width: c.width,
+                height: c.height,
+                borderRadius: c.borderRadius,
+              },
+            ]}
           />
         ))}
-        <View style={styles.mapOverlay}>
-          <Text style={styles.mapIcon}>🌍</Text>
-          <Text style={styles.mapLabel}>Interactive Map</Text>
-          <Text style={styles.mapSub}>Showing stories from 89 countries</Text>
-        </View>
+        {/* Story origin dots */}
+        {DOTS.map((d, i) => (
+          <View
+            key={i}
+            style={[styles.dot, { top: d.top as any, left: d.left as any }]}
+          />
+        ))}
       </View>
+
+      <Text style={styles.countLabel}>Showing stories from 89 countries</Text>
 
       <Text style={styles.sectionLabel}>Top origin countries</Text>
       <ScrollView
@@ -79,7 +111,7 @@ export default function MapScreen() {
           <View key={c.name} style={styles.chip}>
             <Text style={styles.chipFlag}>{c.flag}</Text>
             <Text style={styles.chipName}>{c.name}</Text>
-            <Text style={styles.chipCount}>{c.count}</Text>
+            <Text style={styles.chipCount}>{c.count} stories</Text>
           </View>
         ))}
       </ScrollView>
@@ -96,24 +128,26 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     paddingTop: 60,
     paddingHorizontal: 24,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subheader: {
     color: '#f8f6f0',
     fontSize: 16,
     paddingHorizontal: 24,
-    marginBottom: 24,
+    marginBottom: 20,
   },
 
   mapContainer: {
-    height: MAP_HEIGHT,
-    marginHorizontal: 24,
+    height: 350,
+    width: SCREEN_WIDTH,
     backgroundColor: '#1e293b',
-    borderRadius: 16,
-    overflow: 'hidden',
     position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  continent: {
+    position: 'absolute',
+    backgroundColor: '#d4a843',
+    opacity: 0.4,
   },
   dot: {
     position: 'absolute',
@@ -121,39 +155,36 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     backgroundColor: '#d4a843',
-    opacity: 0.85,
+    opacity: 0.9,
   },
-  mapOverlay: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(15,23,42,0.55)',
-    borderRadius: 12,
-    paddingVertical: 16,
+
+  countLabel: {
+    color: '#94a3b8',
+    fontSize: 13,
     paddingHorizontal: 24,
+    marginTop: 12,
+    marginBottom: 24,
   },
-  mapIcon: { fontSize: 36, marginBottom: 8 },
-  mapLabel: { color: '#d4a843', fontSize: 18, fontWeight: '700', marginBottom: 6 },
-  mapSub: { color: '#f8f6f0', fontSize: 14 },
 
   sectionLabel: {
     color: '#f8f6f0',
     fontSize: 14,
     fontWeight: '600',
     paddingHorizontal: 24,
-    marginTop: 28,
     marginBottom: 12,
   },
 
   chipsScroll: { flexGrow: 0 },
-  chipsContent: { paddingHorizontal: 24, gap: 10, paddingBottom: 4 },
+  chipsContent: { paddingHorizontal: 24, gap: 12, paddingBottom: 4 },
   chip: {
     backgroundColor: '#1e293b',
     borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    minWidth: 90,
+    minWidth: 100,
   },
-  chipFlag: { fontSize: 24, marginBottom: 4 },
-  chipName: { color: '#d4a843', fontSize: 12, fontWeight: '700', marginBottom: 2 },
-  chipCount: { color: '#94a3b8', fontSize: 12 },
+  chipFlag: { fontSize: 32, marginBottom: 6 },
+  chipName: { color: '#d4a843', fontSize: 13, fontWeight: '700', marginBottom: 2 },
+  chipCount: { color: '#f8f6f0', fontSize: 12 },
 });
