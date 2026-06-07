@@ -18,6 +18,7 @@ export default function TabsLayout() {
           else if (r === 'share') label = '➕';
           else if (r === 'map') label = '🗺️';
           else if (r === 'community') label = '👥';
+          else if (r === 'about') label = 'ℹ️';
           return <Text style={{ color, fontSize: size }}>{label}</Text>;
         },
       })}
@@ -27,6 +28,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="share" options={{ title: 'Share Your Story' }} />
       <Tabs.Screen name="map" options={{ title: 'Journey Map' }} />
       <Tabs.Screen name="community" options={{ title: 'Community Hubs' }} />
+      <Tabs.Screen name="about" options={{ title: 'About' }} />
     </Tabs>
   );
 }
