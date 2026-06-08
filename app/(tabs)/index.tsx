@@ -1,18 +1,83 @@
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+
+const SUPABASE_URL = 'https://hesfbleyhuzlsqdjbciu.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_LuEFLmPs0_HQX1tP3El2SQ_uMSG_uxg';
+
+type Story = {
+  id: string;
+  name: string;
+  country_of_origin: string;
+  story_text: string;
+};
+
+type Stats = {
+  stories: string;
+  countries: string;
+  states: string;
+};
+
+const HEADERS = {
+  apikey: SUPABASE_ANON_KEY,
+  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+};
 
 export default function HomeScreen() {
   const router = useRouter();
 
-  const stats = [
-    { label: 'Stories archived', value: '1,247' },
-    { label: 'Countries represented', value: '89' },
-    { label: 'US states covered', value: '50' },
-  ];
+  const [stats, setStats] = useState<Stats>({ stories: '—', countries: '—', states: '—' });
+  const [featured, setFeatured] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const featured = [
-    { name: 'Ana Martinez', country: 'Mexico', excerpt: 'From a small town to the New York skyline...' },
-    { name: 'Kwame Mensah', country: 'Ghana', excerpt: 'A long journey across the sea and hope...' },
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [featuredRes, statsRes] = await Promise.all([
+          fetch(
+            `${SUPABASE_URL}/rest/v1/stories?select=id,name,country_of_origin,story_text&order=created_at.desc&limit=3`,
+            { headers: HEADERS }
+          ),
+          fetch(
+            `${SUPABASE_URL}/rest/v1/stories?select=country_of_origin,us_state`,
+            { headers: { ...HEADERS, Prefer: 'count=exact' } }
+          ),
+        ]);
+
+        if (featuredRes.ok) {
+          const data: Story[] = await featuredRes.json();
+          setFeatured(data);
+        }
+
+        if (statsRes.ok) {
+          const contentRange = statsRes.headers.get('content-range');
+          const total = contentRange ? contentRange.split('/')[1] : null;
+          const rows: { country_of_origin: string | null; us_state: string | null }[] =
+            await statsRes.json();
+
+          const countries = new Set(rows.map((r) => r.country_of_origin).filter(Boolean)).size;
+          const states = new Set(rows.map((r) => r.us_state).filter(Boolean)).size;
+
+          setStats({
+            stories: total ? Number(total).toLocaleString() : rows.length.toLocaleString(),
+            countries: countries > 0 ? String(countries) : '—',
+            states: states > 0 ? String(states) : '—',
+          });
+        }
+      } catch {
+        // Keep default dashes on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  const statItems = [
+    { label: 'Stories archived', value: stats.stories },
+    { label: 'Countries represented', value: stats.countries },
+    { label: 'US states covered', value: stats.states },
   ];
 
   return (
@@ -37,9 +102,11 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.statsRow}>
-        {stats.map((s) => (
+        {statItems.map((s) => (
           <View key={s.label} style={styles.statItem}>
-            <Text style={styles.statValue}>{s.value}</Text>
+            {loading
+              ? <ActivityIndicator size="small" color="#d4a843" />
+              : <Text style={styles.statValue}>{s.value}</Text>}
             <Text style={styles.statLabel}>{s.label}</Text>
           </View>
         ))}
@@ -47,13 +114,25 @@ export default function HomeScreen() {
 
       <Text style={styles.sectionHeading}>Featured Stories</Text>
       <View style={styles.cardsContainer}>
-        {featured.map((f) => (
-          <View key={f.name} style={styles.card}>
-            <Text style={styles.cardTitle}>{f.name}</Text>
-            <Text style={styles.cardMeta}>{f.country}</Text>
-            <Text style={styles.cardExcerpt}>{f.excerpt}</Text>
+        {loading ? (
+          <View style={styles.loadingCard}>
+            <ActivityIndicator size="small" color="#d4a843" />
           </View>
-        ))}
+        ) : featured.length === 0 ? (
+          <View style={styles.card}>
+            <Text style={styles.cardExcerpt}>No stories yet — be the first to share yours.</Text>
+          </View>
+        ) : (
+          featured.map((f) => (
+            <View key={f.id} style={styles.card}>
+              <Text style={styles.cardTitle}>{f.name}</Text>
+              <Text style={styles.cardMeta}>{f.country_of_origin}</Text>
+              <Text style={styles.cardExcerpt} numberOfLines={3}>
+                {f.story_text}
+              </Text>
+            </View>
+          ))
+        )}
       </View>
     </ScrollView>
   );
@@ -94,10 +173,7 @@ const styles = StyleSheet.create({
     marginBottom: 36,
   },
 
-  heroButtons: {
-    flexDirection: 'row',
-    marginBottom: 60,
-  },
+  heroButtons: { flexDirection: 'row', marginBottom: 60 },
   filledButton: {
     backgroundColor: '#d4a843',
     paddingVertical: 12,
@@ -121,6 +197,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 24,
     marginBottom: 40,
+    minHeight: 60,
+    alignItems: 'center',
   },
   statItem: { alignItems: 'center', flex: 1 },
   statValue: { color: '#d4a843', fontSize: 32, fontWeight: '800' },
@@ -134,6 +212,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   cardsContainer: { paddingHorizontal: 24 },
+  loadingCard: { backgroundColor: '#1e293b', borderRadius: 10, padding: 24, alignItems: 'center' },
   card: { backgroundColor: '#1e293b', borderRadius: 10, padding: 16, marginBottom: 12 },
   cardTitle: { color: '#f8f6f0', fontSize: 16, fontWeight: '700' },
   cardMeta: { color: '#94a3b8', fontSize: 12, marginTop: 4 },

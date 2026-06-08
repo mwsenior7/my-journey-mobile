@@ -120,13 +120,37 @@ export default function ShareScreen() {
     }
   };
 
-  const handleSubmitWrite = () => {
+  const handleSubmitWrite = async () => {
     if (!storyText.trim() || !writeName.trim()) {
       Alert.alert('Required Fields', 'Please enter your name and story before submitting.');
       return;
     }
-    Alert.alert('Thank You', 'Your story has been submitted for review.');
-    setStoryText(''); setWriteName(''); setCountry(''); setUsState(''); setYear('');
+    setSaving(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/stories`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          name: writeName.trim(),
+          story_text: storyText.trim(),
+          country_of_origin: country.trim() || null,
+          us_state: usState.trim() || null,
+          year: year ? Number(year) : null,
+        }),
+      });
+      if (!res.ok) throw new Error(`Save failed: ${await res.text()}`);
+      Alert.alert('Thank You', 'Your story has been added to the archive.');
+      setStoryText(''); setWriteName(''); setCountry(''); setUsState(''); setYear('');
+    } catch (e: any) {
+      Alert.alert('Error', e.message ?? 'Failed to submit story.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const renderAI = () => {
@@ -293,8 +317,15 @@ export default function ShareScreen() {
           <TextInput style={styles.fieldInput} placeholder="Country of origin" placeholderTextColor="#64748b" value={country} onChangeText={setCountry} />
           <TextInput style={styles.fieldInput} placeholder="US state you settled in" placeholderTextColor="#64748b" value={usState} onChangeText={setUsState} />
           <TextInput style={styles.fieldInput} placeholder="Year you arrived" placeholderTextColor="#64748b" keyboardType="number-pad" value={year} onChangeText={setYear} />
-          <TouchableOpacity style={styles.primaryBtn} activeOpacity={0.85} onPress={handleSubmitWrite}>
-            <Text style={styles.primaryBtnText}>Submit Story</Text>
+          <TouchableOpacity
+            style={[styles.primaryBtn, saving && styles.btnDisabled]}
+            activeOpacity={0.85}
+            onPress={handleSubmitWrite}
+            disabled={saving}
+          >
+            {saving
+              ? <ActivityIndicator size="small" color="#0f172a" />
+              : <Text style={styles.primaryBtnText}>Submit Story</Text>}
           </TouchableOpacity>
         </View>
       )}
