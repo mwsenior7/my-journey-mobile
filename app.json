@@ -28,7 +28,7 @@
     "scheme": "myjourneytoamerica",
     "plugins": [
       "expo-router",
-      "expo-av"
+      "expo-audio"
     ],
     "extra": {
       "eas": {

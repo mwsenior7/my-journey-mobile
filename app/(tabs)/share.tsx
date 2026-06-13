@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Audio } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync, AudioPlayer } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
 
 const SUPABASE_URL = 'https://hesfbleyhuzlsqdjbciu.supabase.co';
@@ -52,7 +52,7 @@ export default function ShareScreen() {
   const [saving, setSaving] = useState(false);
 
   // TTS state
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const soundRef = useRef<AudioPlayer | null>(null);
   const [ttsLoading, setTtsLoading] = useState(false);
 
   // Write myself state
@@ -64,9 +64,9 @@ export default function ShareScreen() {
 
   // Configure audio session on mount
   useEffect(() => {
-    Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
+    setAudioModeAsync({
+      allowsRecording: false,
+      playsInSilentMode: true,
     }).catch(() => {});
   }, []);
 
@@ -94,11 +94,11 @@ export default function ShareScreen() {
     }).catch(() => {});
   }, []);
 
-  const stopAndUnloadSound = useCallback(async () => {
+  const stopAndUnloadSound = useCallback(() => {
     if (soundRef.current) {
       try {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
+        soundRef.current.pause();
+        soundRef.current.remove();
       } catch {
         // ignore cleanup errors
       }
@@ -116,7 +116,7 @@ export default function ShareScreen() {
   );
 
   const fetchAndPlay = useCallback(async (text: string) => {
-    await stopAndUnloadSound();
+    stopAndUnloadSound();
     setTtsLoading(true);
     try {
       const res = await fetch(TTS_URL, {
@@ -131,9 +131,9 @@ export default function ShareScreen() {
       await FileSystem.writeAsStringAsync(tempUri, base64, {
         encoding: FileSystem.EncodingType.Base64,
       });
-      const { sound } = await Audio.Sound.createAsync({ uri: tempUri });
-      soundRef.current = sound;
-      await sound.playAsync();
+      const player = createAudioPlayer({ uri: tempUri });
+      soundRef.current = player;
+      player.play();
     } catch {
       // TTS failure is non-fatal
     } finally {
@@ -187,7 +187,7 @@ export default function ShareScreen() {
   };
 
   const handleGenerate = async () => {
-    await stopAndUnloadSound();
+    stopAndUnloadSound();
     setPhase('generating');
     const qaPairs = QUESTIONS.map((q, i) =>
       `Q${i + 1}: ${q}\nAnswer: ${answers[i].trim() || '(not answered)'}`
